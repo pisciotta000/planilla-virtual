@@ -28,7 +28,7 @@
   .role-tag{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;display:inline-block}
   .r-sup{background:#7c3aed;color:#fff}.r-lid{background:#0891b2;color:#fff}.r-ope{background:#475569;color:#fff}.r-prog{background:#db2777;color:#fff}
   .area-tag{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;margin-left:4px}
-  .a-pint{background:#2563eb;color:#fff}.a-pul{background:#d97706;color:#fff}.a-prog{background:#6d28d9;color:#fff}
+  .a-pint{background:#2563eb;color:#fff}.a-pul{background:#d97706;color:#fff}.a-prog{background:#6d28d9;color:#fff}.a-cab{background:#0f766e;color:#fff}
 
   /* HEADER */
   header{display:flex;align-items:center;gap:8px;background:var(--panel);border-bottom:1px solid var(--line);
@@ -316,20 +316,20 @@
    MAQUETA - Planilla Virtual de Producción (v3)
    Base de datos por marcas · dashboard por tipo de defecto
    ============================================================= */
-const LS='pv_maqueta_v4';
+const LS='pv_maqueta_v5';
 const USERS=[
-  {id:'u1',nombre:'Juan Pérez',rol:'Supervisor',area:'Pintura',color:'#a78bfa'},
-  {id:'u2',nombre:'María López',rol:'Líder',area:'Pintura',color:'#22d3ee'},
-  {id:'u3',nombre:'Ana Ruiz',rol:'Supervisor',area:'Pulido',color:'#f59e0b'},
-  {id:'u4',nombre:'Diego Sosa',rol:'Líder',area:'Pulido',color:'#34d399'},
-  {id:'u5',nombre:'Pedro Gómez',rol:'Operario',area:'Pulido',color:'#94a3b8'},
-  {id:'u6',nombre:'Sofía Díaz',rol:'Programador',area:'Programación',color:'#f472b6'},
+  {id:'u1',nombre:'Corbalán Hernán',rol:'Supervisor',area:'Pintura',color:'#a78bfa'},
+  {id:'u2',nombre:'Cuenca Ezequiel',rol:'Líder',area:'Pintura',color:'#22d3ee'},
+  {id:'u3',nombre:'Ferreyra Franco',rol:'Supervisor',area:'Pulido',color:'#f59e0b'},
+  {id:'u4',nombre:'Quiquinto Pablo',rol:'Líder',area:'Pulido',color:'#34d399'},
+  {id:'u5',nombre:'Ojeda Elvio',rol:'Operario',area:'Cabina',color:'#94a3b8'},
+  {id:'u6',nombre:'Belmonte Lucas',rol:'Programador',area:'Programación',color:'#f472b6'},
 ];
 const puedeEditar=u=>u.rol==='Supervisor'||u.rol==='Líder';
 const esProgramador=u=>u.rol==='Programador';
 const esJefePintura=u=>(u.rol==='Supervisor'||u.rol==='Líder')&&u.area==='Pintura';
 const roleClass=r=>r==='Supervisor'?'r-sup':r==='Líder'?'r-lid':r==='Programador'?'r-prog':'r-ope';
-const areaClass=a=>a==='Pintura'?'a-pint':a==='Pulido'?'a-pul':'a-prog';
+const areaClass=a=>a==='Pintura'?'a-pint':a==='Pulido'?'a-pul':a==='Cabina'?'a-cab':'a-prog';
 const iso=d=>d.toISOString().slice(0,10);
 const dayOff=n=>{const d=new Date();d.setDate(d.getDate()-n);return iso(d);};
 function sampleFoto(label,bg){
@@ -374,36 +374,36 @@ function seed(){
 
   const nums=['3348','3349','3350','3351','3352'];
   const vueltas={};
-  nums.forEach((num,idx)=>{vueltas[num]={num,actual:idx===0,orden:idx,reprogramada:false,createdBy:'Sofía Díaz',rows:baseRows(),hist:[]};});
+  nums.forEach((num,idx)=>{vueltas[num]={num,actual:idx===0,orden:idx,reprogramada:false,createdBy:'Belmonte Lucas',rows:baseRows(),hist:[]};});
   const v=vueltas['3348'],r=v.rows[2];
-  r.prevColor=r.color;r.color='MAGNETIC GRAY';r.changedBy='Juan Pérez';r.changedAt=Date.now()-3600e3;
-  v.hist.push({n:r.n,cod:r.cod,campo:'color',prev:'OXFORD WHITE',next:'MAGNETIC GRAY',by:'Juan Pérez',at:Date.now()-3600e3});
+  r.prevColor=r.color;r.color='MAGNETIC GRAY';r.changedBy='Corbalán Hernán';r.changedAt=Date.now()-3600e3;
+  v.hist.push({n:r.n,cod:r.cod,campo:'color',prev:'OXFORD WHITE',next:'MAGNETIC GRAY',by:'Corbalán Hernán',at:Date.now()-3600e3});
   const v2=vueltas['3350'];v2.reprogramada=true;const r2=v2.rows[13],prevObs=r2.obs;
   r2.obs='FRONT BUMPER RANGER';r2.cod='11544';
-  v2.hist.push({n:r2.n,cod:r2.cod,campo:'modelo',prev:prevObs,next:'FRONT BUMPER RANGER',by:'María López',at:Date.now()-7200e3});
+  v2.hist.push({n:r2.n,cod:r2.cod,campo:'modelo',prev:prevObs,next:'FRONT BUMPER RANGER',by:'Cuenca Ezequiel',at:Date.now()-7200e3});
 
   const mk=(off,modelo,cod,marca,estado,def,ubic,by,bg)=>({
     id:1000+Math.random(),fecha:dayOff(off),modelo,cod,marca,estado,by,
     defecto:estado==='mala'?def:null,ubic:estado==='mala'?ubic:null,foto:estado==='mala'?sampleFoto(def,bg):null});
   const piezas=[
-    mk(0,'FRONT BUMPER S/S P703','11532','Ford','buena',null,null,'Diego Sosa'),
-    mk(0,'FRONT BUMPER S/S P703','11532','Ford','buena',null,null,'Diego Sosa'),
-    mk(0,'ARCO P703','11625','Ford','buena',null,null,'Pedro Gómez'),
-    mk(0,'HBAR P703','11689','Ford','mala','Chorreada','esquina inferior derecha','Pedro Gómez','#4a4f54'),
-    mk(0,'Fiat Delantero','8948','Fiat','mala','Falta de clear','zona central','Diego Sosa','#c9ccce'),
-    mk(1,'TAPA DERECHA P703','MP7001','Ford','buena',null,null,'Pedro Gómez'),
-    mk(1,'TAPA IZQUIERDA P703','MP700A','Ford','buena',null,null,'Pedro Gómez'),
-    mk(1,'Fiat Trasero','9021','Fiat','mala','Falta de color','borde izquierdo','Diego Sosa','#c9ccce'),
-    mk(2,'HBAR P703 LTD','12111','Ford','mala','Chorreada','parrilla frontal','Pedro Gómez','#9aa0a6'),
-    mk(3,'BOX RAIL DERECHO P703','MP7550','Ford','buena',null,null,'Diego Sosa'),
-    mk(6,'PG DELANTERO PEUGEOT','10427','Peugeot','mala','Falta de clear','parrilla frontal','Pedro Gómez','#efeae0'),
-    mk(18,'RANGER P703 LTD','12095','Ford','buena',null,null,'Pedro Gómez'),
+    mk(0,'FRONT BUMPER S/S P703','11532','Ford','buena',null,null,'Quiquinto Pablo'),
+    mk(0,'FRONT BUMPER S/S P703','11532','Ford','buena',null,null,'Quiquinto Pablo'),
+    mk(0,'ARCO P703','11625','Ford','buena',null,null,'Ojeda Elvio'),
+    mk(0,'HBAR P703','11689','Ford','mala','Chorreada','esquina inferior derecha','Ojeda Elvio','#4a4f54'),
+    mk(0,'Fiat Delantero','8948','Fiat','mala','Falta de clear','zona central','Quiquinto Pablo','#c9ccce'),
+    mk(1,'TAPA DERECHA P703','MP7001','Ford','buena',null,null,'Ojeda Elvio'),
+    mk(1,'TAPA IZQUIERDA P703','MP700A','Ford','buena',null,null,'Ojeda Elvio'),
+    mk(1,'Fiat Trasero','9021','Fiat','mala','Falta de color','borde izquierdo','Quiquinto Pablo','#c9ccce'),
+    mk(2,'HBAR P703 LTD','12111','Ford','mala','Chorreada','parrilla frontal','Ojeda Elvio','#9aa0a6'),
+    mk(3,'BOX RAIL DERECHO P703','MP7550','Ford','buena',null,null,'Quiquinto Pablo'),
+    mk(6,'PG DELANTERO PEUGEOT','10427','Peugeot','mala','Falta de clear','parrilla frontal','Ojeda Elvio','#efeae0'),
+    mk(18,'RANGER P703 LTD','12095','Ford','buena',null,null,'Ojeda Elvio'),
   ];
   const notifs=[];
   piezas.filter(p=>p.estado==='mala').forEach(p=>notifs.push({id:p.id,tipo:'pieza_mala',fecha:p.fecha,
     modelo:p.modelo,defecto:p.defecto,ubic:p.ubic,by:p.by,at:new Date(p.fecha+'T10:00').getTime(),read:false}));
   notifs.push({id:9001,tipo:'cambio',vuelta:'3348',n:3,obs:'ARCO P703',campo:'color',
-    prev:'OXFORD WHITE',next:'MAGNETIC GRAY',by:'Juan Pérez',at:Date.now()-3600e3,read:true});
+    prev:'OXFORD WHITE',next:'MAGNETIC GRAY',by:'Corbalán Hernán',at:Date.now()-3600e3,read:true});
 
   return {vueltas,notifs,piezas,colores,marcas,catalogo};
 }
