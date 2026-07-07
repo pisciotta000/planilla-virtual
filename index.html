@@ -188,7 +188,10 @@
         <div class="panel">
           <h3>Nueva pieza</h3>
           <div style="display:flex;flex-direction:column;gap:10px">
-            <label class="fld">Fecha<input type="date" id="pFecha"></label>
+            <div class="inline">
+              <label class="fld" style="flex:1">Fecha<input type="date" id="pFecha"></label>
+              <label class="fld" style="flex:1">Vuelta<select id="pVuelta"></select></label>
+            </div>
             <label class="fld">Nombre / modelo de pieza
               <input type="text" id="pModelo" list="listaPiezas" placeholder="Empezá a escribir el nombre...">
               <datalist id="listaPiezas"></datalist>
@@ -231,9 +234,11 @@
           <select id="dPeriodo">
             <option value="dia">Día</option><option value="semana">Semana</option>
             <option value="mes" selected>Mes</option><option value="anio">Año</option>
+            <option value="vuelta">Vuelta</option>
           </select>
         </label>
-        <label class="fld">Fecha de referencia<input type="date" id="dFecha"></label>
+        <label class="fld" id="dFechaWrap">Fecha de referencia<input type="date" id="dFecha"></label>
+        <label class="fld hidden" id="dVueltaWrap">Vuelta<select id="dVuelta"></select></label>
       </div>
       <div class="kpis">
         <div class="kpi sol" data-filter="todos"><div class="n" id="kSol">0</div><div class="l">Solicitadas</div></div>
@@ -245,7 +250,7 @@
       <p class="note" id="dashHint">Tocá un indicador de arriba para filtrar la lista de la derecha.</p>
       <div class="grid2">
         <div class="panel">
-          <h3>Gráfico del período</h3>
+          <h3 id="dashChartTitle">Gráfico del período</h3>
           <canvas id="chart" height="220"></canvas>
           <div class="legend">
             <span><i class="lg" style="background:var(--accent)"></i>Solicitadas</span>
@@ -316,7 +321,7 @@
    MAQUETA - Planilla Virtual de Producción (v3)
    Base de datos por marcas · dashboard por tipo de defecto
    ============================================================= */
-const LS='pv_maqueta_v5';
+const LS='pv_maqueta_v6';
 /* ── Memoria compartida en la nube (Firebase Realtime Database) ──
    Pegá entre las comillas la URL de tu base (termina en .firebaseio.com), por ej:
    const FB_URL='https://tu-proyecto-default-rtdb.firebaseio.com';
@@ -404,6 +409,9 @@ function seed(){
     mk(6,'PG DELANTERO PEUGEOT','10427','Peugeot','mala','Falta de clear','parrilla frontal','Ojeda Elvio','#efeae0'),
     mk(18,'RANGER P703 LTD','12095','Ford','buena',null,null,'Ojeda Elvio'),
   ];
+  // vuelta de ejemplo para cada pieza (informe por vuelta)
+  const vuPorPieza=['3348','3348','3348','3348','3348','3349','3349','3349','3350','3351','3352','3352'];
+  piezas.forEach((p,i)=>{p.vuelta=vuPorPieza[i]||'3348';});
   const notifs=[];
   piezas.filter(p=>p.estado==='mala').forEach(p=>notifs.push({id:p.id,tipo:'pieza_mala',fecha:p.fecha,
     modelo:p.modelo,defecto:p.defecto,ubic:p.ubic,by:p.by,at:new Date(p.fecha+'T10:00').getTime(),read:false}));
@@ -523,6 +531,15 @@ function initVueltas(){
     o.textContent=v.actual?`${v.num} · actual`:`${v.num} · próx ${v.orden}`;sel.appendChild(o);
   });
   sel.value=curVuelta;sel.onchange=()=>{curVuelta=sel.value;renderPlanilla();};
+  fillVueltaSelect('dVuelta');fillVueltaSelect('pVuelta',true);
+}
+// llena un <select> con las vueltas; conserva lo elegido. actualPrimero=true deja la vuelta en curso por defecto.
+function fillVueltaSelect(id,actualPrimero){
+  const s=document.getElementById(id);if(!s)return;const prev=s.value;
+  const vs=Object.values(DB.vueltas).sort((a,b)=>a.orden-b.orden);
+  s.innerHTML=vs.map(v=>`<option value="${v.num}">${v.num}${v.actual?' · actual':''}</option>`).join('');
+  if(prev&&DB.vueltas[prev])s.value=prev;
+  else if(actualPrimero){const act=vs.find(v=>v.actual);if(act)s.value=act.num;}
 }
 function renderPlanilla(){
   const v=DB.vueltas[curVuelta];
@@ -710,8 +727,9 @@ document.getElementById('addPiezaBtn').onclick=()=>{
   const fecha=document.getElementById('pFecha').value,modelo=document.getElementById('pModelo').value.trim();
   const cod=document.getElementById('pCod').value.trim(),marca=document.getElementById('pMarca').value.trim();
   const estado=document.getElementById('pEstado').value;
+  const vuelta=document.getElementById('pVuelta').value;
   if(!fecha||!modelo){alert('Completá fecha y nombre de pieza.');return;}
-  const p={id:Date.now(),fecha,modelo,cod,marca,estado,by:ME.nombre};
+  const p={id:Date.now(),fecha,vuelta,modelo,cod,marca,estado,by:ME.nombre};
   if(estado==='mala'){p.defecto=document.getElementById('pDefecto').value;p.ubic=document.getElementById('pUbic').value.trim();p.foto=fotoData;
     pushNotif({tipo:'pieza_mala',pieza:p.id,fecha,modelo,defecto:p.defecto,ubic:p.ubic,by:ME.nombre,at:Date.now(),read:false});}
   DB.piezas.push(p);save();
@@ -738,7 +756,7 @@ function piezaCard(p){
       <b>${p.modelo}${p.cod?' <span style="color:var(--muted);font-weight:400">('+p.cod+')</span>':''}</b>
       <span class="est ${p.estado}">${p.estado==='mala'?'MALA':'BUENA'}</span></div>
     <div style="margin:4px 0">${mtag}</div>${det}
-    <div style="font-size:11px;color:var(--muted);margin-top:4px">Cargó: ${p.by} · ${p.fecha}</div></div></div>`;
+    <div style="font-size:11px;color:var(--muted);margin-top:4px">Cargó: ${p.by} · ${p.fecha}${p.vuelta?' · Vuelta '+p.vuelta:''}</div></div></div>`;
 }
 function fillDatalist(){document.getElementById('listaPiezas').innerHTML=DB.catalogo.map(c=>`<option value="${c.nombre}">${c.cod} · ${c.marca}</option>`).join('');}
 
@@ -855,7 +873,13 @@ const FILTER_LABEL={malas:'Piezas malas',todos:'Todas las piezas',buena:'Piezas 
   'Chorreada':'Chorreados','Falta de color':'Falta de color','Falta de clear':'Falta de clear'};
 function renderDashboard(){
   const periodo=document.getElementById('dPeriodo').value,ref=document.getElementById('dFecha').value;
-  const items=DB.piezas.filter(p=>periodMatch(p.fecha,periodo,ref));
+  const porVuelta=periodo==='vuelta';
+  document.getElementById('dFechaWrap').classList.toggle('hidden',porVuelta);
+  document.getElementById('dVueltaWrap').classList.toggle('hidden',!porVuelta);
+  const vuSel=document.getElementById('dVuelta').value;
+  const scope=porVuelta?('de la vuelta '+(vuSel||'')):'del período';
+  document.getElementById('dashChartTitle').textContent='Gráfico '+scope;
+  const items=porVuelta?DB.piezas.filter(p=>p.vuelta===vuSel):DB.piezas.filter(p=>periodMatch(p.fecha,periodo,ref));
   const buenas=items.filter(p=>p.estado==='buena').length;
   const chor=items.filter(p=>p.estado==='mala'&&p.defecto==='Chorreada').length;
   const fcol=items.filter(p=>p.estado==='mala'&&p.defecto==='Falta de color').length;
@@ -875,11 +899,12 @@ function renderDashboard(){
   else if(dashFilter==='buena')list=items.filter(p=>p.estado==='buena');
   else if(dashFilter==='malas')list=items.filter(p=>p.estado==='mala');
   else list=items.filter(p=>p.estado==='mala'&&p.defecto===dashFilter);
-  document.getElementById('dashMalasTitle').innerHTML=`${FILTER_LABEL[dashFilter]} <small style="color:var(--muted)">(${list.length} · del período)</small>`;
+  document.getElementById('dashMalasTitle').innerHTML=`${FILTER_LABEL[dashFilter]} <small style="color:var(--muted)">(${list.length} · ${scope})</small>`;
   document.getElementById('dashMalas').innerHTML=list.length?list.slice().reverse().map(piezaCard).join(''):'<div class="empty">Sin piezas en esta categoría.</div>';
 }
 document.getElementById('dPeriodo').onchange=renderDashboard;
 document.getElementById('dFecha').onchange=renderDashboard;
+document.getElementById('dVuelta').onchange=renderDashboard;
 document.querySelectorAll('.kpi').forEach(k=>k.onclick=()=>{
   dashFilter=(dashFilter===k.dataset.filter)?'malas':k.dataset.filter; // volver a tocar = reset a malas
   renderDashboard();
