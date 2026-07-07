@@ -525,7 +525,7 @@ function renderHist(){
   const v=DB.vueltas[curVuelta],box=document.getElementById('histBox');
   if(!v.hist.length){box.innerHTML='<div class="empty">Sin cambios registrados todavía.</div>';return;}
   box.innerHTML=v.hist.slice().reverse().map(h=>
-    `<div class="hist">Ítem ${h.n} — ${h.campo==='color'?'Color':'Modelo'}: <b>${h.prev}</b> → <b>${h.next}</b> · por ${h.by} · ${fmt(h.at)}</div>`).join('');
+    `<div class="hist">Ítem ${h.n} — ${h.campo==='color'?'Color':h.campo==='perchas'?'Perchas':'Modelo'}: <b>${h.prev}</b> → <b>${h.next}</b> · por ${h.by} · ${fmt(h.at)}</div>`).join('');
 }
 function openEditModal(n){
   const v=DB.vueltas[curVuelta],r=v.rows.find(x=>x.n===n);
@@ -538,6 +538,11 @@ function openEditModal(n){
       <input type="text" id="mObs" list="mNombres" value="${r.obs.replace(/"/g,'&quot;')}">
       <datalist id="mNombres">${nombres}</datalist></label>
     <label class="fld" style="margin-top:10px">Color<select id="mColor">${opts}</select></label>
+    <div class="inline" style="margin-top:10px">
+      <label class="fld" style="width:100px">Perchas<input type="number" id="mPer" min="0" value="${r.perchas||''}"></label>
+      <label class="fld" style="width:110px">Cantidad<input type="number" id="mCant" min="0" value="${r.cant||'0'}"></label>
+    </div>
+    <p class="note" style="margin:6px 0 0">La cantidad se recalcula sola como <b>perchas × 2</b>. La podés editar a mano.</p>
     <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px">
       <input type="checkbox" id="chkRepro" ${v.reprogramada?'checked':''}> Marcar esta vuelta como <b>reprogramada</b></label>
     <div class="actions"><button class="btn ghost" onclick="closeModal()">Cancelar</button>
@@ -546,10 +551,15 @@ function openEditModal(n){
     const cat=DB.catalogo.find(c=>c.nombre.toLowerCase()===e.target.value.trim().toLowerCase());
     if(cat)document.getElementById('mCod').textContent=cat.cod;
   });
+  document.getElementById('mPer').addEventListener('input',e=>{
+    document.getElementById('mCant').value=(parseInt(e.target.value)||0)*2;
+  });
   document.getElementById('confirmEdit').onclick=()=>{
     const nc=document.getElementById('mColor').value;
     const nObs=document.getElementById('mObs').value.trim()||r.obs;
     const newCod=document.getElementById('mCod').textContent;
+    const nPer=document.getElementById('mPer').value.trim();
+    const nCant=document.getElementById('mCant').value.trim()||r.cant;
     v.reprogramada=document.getElementById('chkRepro').checked;
     if(nc!==r.color){const prev=r.color;r.prevColor=prev;r.color=nc;r.changedBy=ME.nombre;r.changedAt=Date.now();
       v.hist.push({n:r.n,cod:r.cod,campo:'color',prev,next:nc,by:ME.nombre,at:Date.now()});
@@ -557,6 +567,10 @@ function openEditModal(n){
     if(nObs!==r.obs){const prev=r.obs;r.obs=nObs;r.cod=newCod;
       v.hist.push({n:r.n,cod:r.cod,campo:'modelo',prev,next:nObs,by:ME.nombre,at:Date.now()});
       pushNotif({tipo:'cambio',vuelta:curVuelta,n:r.n,obs:nObs,campo:'modelo',prev,next:nObs,by:ME.nombre,at:Date.now(),read:false});}
+    if(nPer!==(r.perchas||'')){const prev=r.perchas||'—';r.perchas=nPer;
+      v.hist.push({n:r.n,cod:r.cod,campo:'perchas',prev,next:nPer||'—',by:ME.nombre,at:Date.now()});
+      pushNotif({tipo:'cambio',vuelta:curVuelta,n:r.n,obs:r.obs,campo:'perchas',prev,next:nPer||'—',by:ME.nombre,at:Date.now(),read:false});}
+    r.cant=nCant;
     save();closeModal();renderPlanilla();renderNotifs();
   };
 }
