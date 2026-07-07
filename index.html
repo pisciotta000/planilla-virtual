@@ -80,6 +80,7 @@
   .kpi .l{font-size:12px;color:var(--muted)}
   .kpi.ok .n{color:var(--ok)}.kpi.sol .n{color:var(--accent)}
   .kpi.d1 .n{color:#ef4444}.kpi.d2 .n{color:#f97316}.kpi.d3 .n{color:#f59e0b}
+  .kpi.d4 .n{color:#eab308}.kpi.d5 .n{color:#a855f7}.kpi.d6 .n{color:#ec4899}
 
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
@@ -209,6 +210,9 @@
                   <option value="Chorreada">Chorreada</option>
                   <option value="Falta de color">Falta de color</option>
                   <option value="Falta de clear">Falta de clear</option>
+                  <option value="Piel naranja">Piel naranja</option>
+                  <option value="Hervido">Hervido</option>
+                  <option value="Fuera de tono">Fuera de tono</option>
                 </select>
               </label>
               <label class="fld">¿Dónde está el defecto?<input type="text" id="pUbic" placeholder="Ej: esquina inferior derecha"></label>
@@ -246,6 +250,9 @@
         <div class="kpi d1" data-filter="Chorreada"><div class="n" id="kChor">0</div><div class="l">Chorreados</div></div>
         <div class="kpi d2" data-filter="Falta de color"><div class="n" id="kFcol">0</div><div class="l">Falta de color</div></div>
         <div class="kpi d3" data-filter="Falta de clear"><div class="n" id="kFcle">0</div><div class="l">Falta de clear</div></div>
+        <div class="kpi d4" data-filter="Piel naranja"><div class="n" id="kPiel">0</div><div class="l">Piel naranja</div></div>
+        <div class="kpi d5" data-filter="Hervido"><div class="n" id="kHerv">0</div><div class="l">Hervido</div></div>
+        <div class="kpi d6" data-filter="Fuera de tono"><div class="n" id="kTono">0</div><div class="l">Fuera de tono</div></div>
       </div>
       <p class="note" id="dashHint">Tocá un indicador de arriba para filtrar la lista de la derecha.</p>
       <div class="grid2">
@@ -258,6 +265,9 @@
             <span><i class="lg" style="background:#ef4444"></i>Chorreados</span>
             <span><i class="lg" style="background:#f97316"></i>Falta de color</span>
             <span><i class="lg" style="background:#f59e0b"></i>Falta de clear</span>
+            <span><i class="lg" style="background:#eab308"></i>Piel naranja</span>
+            <span><i class="lg" style="background:#a855f7"></i>Hervido</span>
+            <span><i class="lg" style="background:#ec4899"></i>Fuera de tono</span>
           </div>
         </div>
         <div class="panel">
@@ -321,7 +331,7 @@
    MAQUETA - Planilla Virtual de Producción (v3)
    Base de datos por marcas · dashboard por tipo de defecto
    ============================================================= */
-const LS='pv_maqueta_v6';
+const LS='pv_maqueta_v7';
 /* ── Memoria compartida en la nube (Firebase Realtime Database) ──
    Pegá entre las comillas la URL de tu base (termina en .firebaseio.com), por ej:
    const FB_URL='https://tu-proyecto-default-rtdb.firebaseio.com';
@@ -412,6 +422,23 @@ function seed(){
   // vuelta de ejemplo para cada pieza (informe por vuelta)
   const vuPorPieza=['3348','3348','3348','3348','3348','3349','3349','3349','3350','3351','3352','3352'];
   piezas.forEach((p,i)=>{p.vuelta=vuPorPieza[i]||'3348';});
+  // datos de ejemplo del dashboard para la vuelta 3348: varias piezas malas (los 6 defectos) + algunas buenas
+  const p3348=[
+    mk(0,'FRONT BUMPER S/S P703','11532','Ford','mala','Chorreada','faldón inferior','Ojeda Elvio','#f5f5f5'),
+    mk(0,'ARCO P703','11625','Ford','mala','Chorreada','punta izquierda','Quiquinto Pablo','#4a4f54'),
+    mk(0,'TAPA IZQUIERDA P703','MP700A','Ford','mala','Falta de color','canto interno','Ojeda Elvio','#f5f5f5'),
+    mk(0,'BOX RAIL DERECHO P703','MP7550','Ford','mala','Falta de clear','zona central','Quiquinto Pablo','#f5f5f5'),
+    mk(0,'HBAR P703 LTD','12111','Ford','mala','Piel naranja','parrilla frontal','Ojeda Elvio','#9aa0a6'),
+    mk(0,'HBAR P703','11689','Ford','mala','Piel naranja','capó','Ojeda Elvio','#4a4f54'),
+    mk(0,'RANGER P703 LTD','12095','Ford','mala','Hervido','esquina superior izquierda','Ojeda Elvio','#9aa0a6'),
+    mk(0,'Fiat Trasero','9021','Fiat','mala','Fuera de tono','borde derecho','Quiquinto Pablo','#c9ccce'),
+    mk(0,'TAPA DERECHA P703','MP7001','Ford','buena',null,null,'Ojeda Elvio'),
+    mk(0,'BOX RAIL IZQUIERDO P703','MP7003','Ford','buena',null,null,'Ojeda Elvio'),
+    mk(0,'PG DELANTERO PEUGEOT','10427','Peugeot','buena',null,null,'Quiquinto Pablo'),
+    mk(0,'FRONT BUMPER S/S P703','11532','Ford','buena',null,null,'Ojeda Elvio'),
+  ];
+  p3348.forEach(p=>p.vuelta='3348');
+  piezas.push(...p3348);
   const notifs=[];
   piezas.filter(p=>p.estado==='mala').forEach(p=>notifs.push({id:p.id,tipo:'pieza_mala',fecha:p.fecha,
     modelo:p.modelo,defecto:p.defecto,ubic:p.ubic,by:p.by,at:new Date(p.fecha+'T10:00').getTime(),read:false}));
@@ -868,9 +895,21 @@ function periodMatch(fecha,periodo,ref){
   if(periodo==='mes')return d.getFullYear()===r.getFullYear()&&d.getMonth()===r.getMonth();
   if(periodo==='semana'){const s=new Date(r);s.setDate(r.getDate()-((r.getDay()+6)%7));const e=new Date(s);e.setDate(s.getDate()+6);return d>=s&&d<=e;}
 }
-let dashFilter='malas'; // malas | todos | buena | Chorreada | Falta de color | Falta de clear
-const FILTER_LABEL={malas:'Piezas malas',todos:'Todas las piezas',buena:'Piezas buenas',
-  'Chorreada':'Chorreados','Falta de color':'Falta de color','Falta de clear':'Falta de clear'};
+let dashFilter='malas'; // malas | todos | buena | <nombre de defecto>
+// defectos: nombre, id del KPI, color y abreviatura para el gráfico
+const DEFECTOS=[
+  {n:'Chorreada',      id:'kChor',color:'#ef4444',abbr:'Chorr.'},
+  {n:'Falta de color', id:'kFcol',color:'#f97316',abbr:'F.color'},
+  {n:'Falta de clear', id:'kFcle',color:'#f59e0b',abbr:'F.clear'},
+  {n:'Piel naranja',   id:'kPiel',color:'#eab308',abbr:'P.naranja'},
+  {n:'Hervido',        id:'kHerv',color:'#a855f7',abbr:'Hervido'},
+  {n:'Fuera de tono',  id:'kTono',color:'#ec4899',abbr:'F.tono'},
+];
+const FILTER_LABEL={malas:'Piezas malas',todos:'Todas las piezas',buena:'Piezas buenas'};
+DEFECTOS.forEach(d=>FILTER_LABEL[d.n]=d.n);
+// piezas solicitadas de una vuelta = suma de "cantidad" de la planilla (NO perchas), sin contar VACÍO
+function solicitadasDeVuelta(num){const v=DB.vueltas[num];if(!v)return 0;
+  return v.rows.reduce((s,r)=>s+(r.color==='VACÍO'?0:(parseInt(r.cant)||0)),0);}
 function renderDashboard(){
   const periodo=document.getElementById('dPeriodo').value,ref=document.getElementById('dFecha').value;
   const porVuelta=periodo==='vuelta';
@@ -881,16 +920,15 @@ function renderDashboard(){
   document.getElementById('dashChartTitle').textContent='Gráfico '+scope;
   const items=porVuelta?DB.piezas.filter(p=>p.vuelta===vuSel):DB.piezas.filter(p=>periodMatch(p.fecha,periodo,ref));
   const buenas=items.filter(p=>p.estado==='buena').length;
-  const chor=items.filter(p=>p.estado==='mala'&&p.defecto==='Chorreada').length;
-  const fcol=items.filter(p=>p.estado==='mala'&&p.defecto==='Falta de color').length;
-  const fcle=items.filter(p=>p.estado==='mala'&&p.defecto==='Falta de clear').length;
-  const malas=chor+fcol+fcle,solicitadas=buenas+malas;
+  const defCount={};DEFECTOS.forEach(d=>defCount[d.n]=items.filter(p=>p.estado==='mala'&&p.defecto===d.n).length);
+  const malas=DEFECTOS.reduce((s,d)=>s+defCount[d.n],0);
+  // solicitadas: por vuelta = piezas pedidas en la planilla; por período = producidas (buenas+malas)
+  const solicitadas=porVuelta?solicitadasDeVuelta(vuSel):buenas+malas;
   document.getElementById('kSol').textContent=solicitadas;
   document.getElementById('kOk').textContent=buenas;
-  document.getElementById('kChor').textContent=chor;
-  document.getElementById('kFcol').textContent=fcol;
-  document.getElementById('kFcle').textContent=fcle;
-  drawChart([['Solic.',solicitadas,'#38bdf8'],['Buenas',buenas,'#22c55e'],['Chorr.',chor,'#ef4444'],['F.color',fcol,'#f97316'],['F.clear',fcle,'#f59e0b']]);
+  DEFECTOS.forEach(d=>document.getElementById(d.id).textContent=defCount[d.n]);
+  drawChart([['Solic.',solicitadas,'#38bdf8'],['Buenas',buenas,'#22c55e'],
+    ...DEFECTOS.map(d=>[d.abbr,defCount[d.n],d.color])]);
   // marcar KPI activo
   document.querySelectorAll('.kpi').forEach(k=>k.classList.toggle('active',k.dataset.filter===dashFilter));
   // lista filtrada
