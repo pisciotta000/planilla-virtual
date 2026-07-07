@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planilla Virtual - Línea de Producción (Maqueta)</title>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --line:#334155;
+    --txt:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --accent2:#0ea5e9;
+    --ok:#22c55e; --bad:#ef4444; --warn:#f59e0b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt)}
+  button{font-family:inherit;cursor:pointer}
+  .hidden{display:none !important}
+  .spacer{flex:1}
+
+  /* LOGIN */
+  #login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;width:100%;max-width:400px}
+  .card h1{font-size:20px;margin:0 0 4px}
+  .card p.sub{color:var(--muted);margin:0 0 18px;font-size:13px}
+  .userbtn{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--panel2);
+    border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:12px;margin-bottom:10px}
+  .userbtn:hover{border-color:var(--accent)}
+  .avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#04121f;flex:none}
+  .role-tag{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;display:inline-block}
+  .r-sup{background:#7c3aed;color:#fff}.r-lid{background:#0891b2;color:#fff}.r-ope{background:#475569;color:#fff}.r-prog{background:#db2777;color:#fff}
+  .area-tag{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;margin-left:4px}
+  .a-pint{background:#2563eb;color:#fff}.a-pul{background:#d97706;color:#fff}.a-prog{background:#6d28d9;color:#fff}
+
+  /* HEADER */
+  header{display:flex;align-items:center;gap:8px;background:var(--panel);border-bottom:1px solid var(--line);
+    padding:8px 12px;position:sticky;top:0;z-index:20;flex-wrap:wrap}
+  .tabs{display:flex;gap:6px;align-items:center;overflow-x:auto}
+  .tabs button{background:transparent;border:1px solid transparent;color:var(--muted);padding:8px 12px;border-radius:10px;font-size:14px;white-space:nowrap}
+  .tabs button.active{background:var(--panel2);color:var(--txt);border-color:var(--line)}
+  .vsel{display:flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:4px 8px;font-size:13px;color:var(--muted);white-space:nowrap}
+  .vsel select{background:transparent;border:none;color:var(--txt);font-size:14px;font-weight:600}
+  .bell{position:relative;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    border-radius:10px;padding:8px 10px;font-size:16px}
+  .badge{position:absolute;top:-6px;right:-6px;background:var(--bad);color:#fff;border-radius:20px;
+    font-size:10px;font-weight:700;padding:1px 6px;min-width:18px;text-align:center}
+  .whoami{display:flex;align-items:center;gap:8px;font-size:13px}
+  .linkbtn{background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:6px 10px;font-size:12px}
+
+  main{padding:14px;max-width:1100px;margin:0 auto}
+  h2.section{font-size:17px;margin:4px 0 12px}
+  .row-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+  select,input[type=text],input[type=date],input[type=number]{background:var(--panel2);border:1px solid var(--line);
+    color:var(--txt);border-radius:8px;padding:8px 10px;font-size:14px}
+  input[type=color]{background:var(--panel2);border:1px solid var(--line);border-radius:8px;height:38px;width:52px;padding:2px}
+  label.fld{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+
+  .btn{background:var(--accent2);border:none;color:#04121f;font-weight:700;border-radius:9px;padding:9px 14px;font-size:14px}
+  .btn.ghost{background:var(--panel2);color:var(--txt);border:1px solid var(--line);font-weight:600}
+  .btn.small{padding:5px 10px;font-size:12px}
+  .btn.danger{background:var(--bad);color:#fff}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+  table{border-collapse:collapse;width:100%;font-size:13px;min-width:600px}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:var(--muted);font-weight:600;position:sticky;top:0}
+  tr:hover td{background:rgba(56,189,248,.05)}
+  .swatch{display:inline-flex;align-items:center;gap:8px}
+  .dot{width:16px;height:16px;border-radius:4px;border:1px solid rgba(255,255,255,.25);flex:none}
+  .changed{color:var(--warn);font-size:11px;font-weight:700;margin-left:6px}
+  .repro{background:var(--warn);color:#04121f;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;margin-left:6px}
+  .planilla-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .hintpill{font-size:12px;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:4px 10px}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;transition:.15s}
+  .kpi:hover{border-color:var(--accent)}
+  .kpi.active{outline:2px solid var(--accent);outline-offset:-2px}
+  .kpi .n{font-size:24px;font-weight:800}
+  .kpi .l{font-size:12px;color:var(--muted)}
+  .kpi.ok .n{color:var(--ok)}.kpi.sol .n{color:var(--accent)}
+  .kpi.d1 .n{color:#ef4444}.kpi.d2 .n{color:#f97316}.kpi.d3 .n{color:#f59e0b}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .panel h3{margin:0 0 10px;font-size:14px}
+
+  .piezacard{display:flex;gap:10px;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;background:var(--panel2)}
+  .piezacard img{width:70px;height:70px;object-fit:cover;border-radius:8px;flex:none;background:#000;cursor:zoom-in}
+  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px;flex-direction:column;gap:10px}
+  .lightbox img{max-width:96vw;max-height:88vh;border-radius:10px;box-shadow:0 10px 40px #000}
+  .lightbox .cap{color:#e2e8f0;font-size:13px}
+  .lightbox .close{position:absolute;top:14px;right:18px;color:#fff;font-size:26px;background:none;border:none}
+  .est{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+  .est.buena{background:var(--ok);color:#04121f}.est.mala{background:var(--bad);color:#fff}
+  .marca-tag{font-size:11px;font-weight:700;padding:1px 8px;border-radius:20px;background:#334155;color:#e2e8f0}
+
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;width:100%;max-width:460px}
+  .modal h3{margin:0 0 12px}
+  .modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+
+  #notifPanel{position:fixed;top:56px;right:10px;width:330px;max-width:92vw;background:var(--panel);
+    border:1px solid var(--line);border-radius:12px;z-index:40;box-shadow:0 12px 30px rgba(0,0,0,.5);max-height:70vh;overflow:auto}
+  #notifPanel h3{margin:0;padding:12px 14px;border-bottom:1px solid var(--line);font-size:14px;position:sticky;top:0;background:var(--panel)}
+  .notif{padding:11px 14px;border-bottom:1px solid var(--line);font-size:13px}
+  .notif small{color:var(--muted)}
+  .notif.unread{background:rgba(56,189,248,.08)}
+
+  .hist{font-size:12px;color:var(--muted);border-left:2px solid var(--line);padding-left:10px;margin:6px 0}
+  .empty{color:var(--muted);font-size:13px;padding:14px;text-align:center}
+  canvas{width:100%;max-width:100%}
+  .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .lg{width:12px;height:12px;border-radius:3px}
+  .note{font-size:12px;color:var(--muted);background:var(--panel2);border:1px dashed var(--line);border-radius:8px;padding:8px 10px;margin-bottom:12px}
+  .colorchecks{display:flex;flex-wrap:wrap;gap:8px}
+  .colorchecks label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txt);
+    background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 9px;cursor:pointer}
+  .inline{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr}.whoami .meta{display:none}}
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<section id="login">
+  <div class="card">
+    <h1>Planilla Virtual de Producción</h1>
+    <p class="sub">Elegí un usuario para ingresar (maqueta de demostración)</p>
+    <div id="userList"></div>
+    <p class="sub" style="margin-top:14px">Supervisores y Líderes editan la planilla. Las piezas malas de <b>Pulido</b> avisan a <b>Pintura</b>.</p>
+  </div>
+</section>
+
+<!-- ===================== APP ===================== -->
+<div id="app" class="hidden">
+  <header>
+    <div class="tabs" id="tabs">
+      <button data-tab="planilla" class="active">📋 Planilla</button>
+      <button data-tab="pulido">🔧 Pulido</button>
+      <button data-tab="dashboard">📊 Dashboard</button>
+      <span class="vsel">Vuelta N°<select id="vueltaSel"></select></span>
+      <button data-tab="catalogo">🗂️ Base de datos</button>
+    </div>
+    <span class="spacer"></span>
+    <button class="bell" id="bellBtn">🔔<span class="badge hidden" id="bellBadge">0</span></button>
+    <div class="whoami">
+      <span class="avatar" id="meAvatar"></span>
+      <div class="meta"><div id="meName" style="font-weight:600"></div><span id="meRoleArea"></span></div>
+    </div>
+    <button class="linkbtn" id="logoutBtn">Salir</button>
+  </header>
+
+  <main>
+    <!-- ---------- PLANILLA ---------- -->
+    <section id="tab-planilla">
+      <div class="planilla-top">
+        <span id="reproBanner"></span>
+        <span id="vueltaMeta" class="hintpill"></span>
+        <span id="progControls" class="hidden" style="display:flex;gap:6px">
+          <button class="btn small" id="newVueltaBtn">🆕 Nueva vuelta</button>
+          <button class="btn small ghost" id="addRowBtn">➕ Agregar ítem</button>
+        </span>
+        <span class="spacer"></span>
+        <span id="planillaRoleHint" class="hintpill"></span>
+      </div>
+      <div class="tablewrap">
+        <table id="planillaTable">
+          <thead><tr>
+            <th>N°</th><th>Código</th><th>Cant.</th><th>Color</th>
+            <th>Perchas</th><th>Observaciones (modelo)</th><th>Acción</th>
+          </tr></thead>
+          <tbody id="planillaBody"></tbody>
+        </table>
+      </div>
+      <div id="vueltaResumen" class="planilla-top" style="margin-top:10px"></div>
+      <div class="panel" style="margin-top:14px">
+        <h3>Historial de cambios de esta vuelta</h3>
+        <div id="histBox"><div class="empty">Sin cambios registrados todavía.</div></div>
+      </div>
+    </section>
+
+    <!-- ---------- PULIDO ---------- -->
+    <section id="tab-pulido" class="hidden">
+      <h2 class="section">Registro de pulido — carga de piezas</h2>
+      <div class="grid2">
+        <div class="panel">
+          <h3>Nueva pieza</h3>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <label class="fld">Fecha<input type="date" id="pFecha"></label>
+            <label class="fld">Nombre / modelo de pieza
+              <input type="text" id="pModelo" list="listaPiezas" placeholder="Empezá a escribir el nombre...">
+              <datalist id="listaPiezas"></datalist>
+            </label>
+            <div class="inline">
+              <label class="fld" style="flex:1">Código (automático)<input type="text" id="pCod" placeholder="—"></label>
+              <label class="fld" style="flex:1">Marca<input type="text" id="pMarca" placeholder="—"></label>
+            </div>
+            <label class="fld">Estado
+              <select id="pEstado"><option value="buena">Buena</option><option value="mala">Mala (defectuosa)</option></select>
+            </label>
+            <div id="malaFields" class="hidden" style="display:flex;flex-direction:column;gap:10px">
+              <label class="fld">Tipo de defecto
+                <select id="pDefecto">
+                  <option value="Chorreada">Chorreada</option>
+                  <option value="Falta de color">Falta de color</option>
+                  <option value="Falta de clear">Falta de clear</option>
+                </select>
+              </label>
+              <label class="fld">¿Dónde está el defecto?<input type="text" id="pUbic" placeholder="Ej: esquina inferior derecha"></label>
+              <label class="fld">Foto de la pieza<input type="file" id="pFoto" accept="image/*"></label>
+              <img id="pPreview" class="hidden" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;border:1px solid var(--line)">
+            </div>
+            <button class="btn" id="addPiezaBtn">Guardar pieza</button>
+            <p class="note" style="margin:0">Al guardar una pieza <b>mala</b>, se envía una notificación automática a Pintura (PC y celular).</p>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Piezas cargadas — <span id="pulidoFechaLbl"></span></h3>
+          <div id="pulidoList"><div class="empty">Sin piezas cargadas para esta fecha.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- DASHBOARD ---------- -->
+    <section id="tab-dashboard" class="hidden">
+      <h2 class="section">Dashboard de calidad</h2>
+      <div class="row-controls">
+        <label class="fld">Ver por
+          <select id="dPeriodo">
+            <option value="dia">Día</option><option value="semana">Semana</option>
+            <option value="mes" selected>Mes</option><option value="anio">Año</option>
+          </select>
+        </label>
+        <label class="fld">Fecha de referencia<input type="date" id="dFecha"></label>
+      </div>
+      <div class="kpis">
+        <div class="kpi sol" data-filter="todos"><div class="n" id="kSol">0</div><div class="l">Solicitadas</div></div>
+        <div class="kpi ok" data-filter="buena"><div class="n" id="kOk">0</div><div class="l">Buenas</div></div>
+        <div class="kpi d1" data-filter="Chorreada"><div class="n" id="kChor">0</div><div class="l">Chorreados</div></div>
+        <div class="kpi d2" data-filter="Falta de color"><div class="n" id="kFcol">0</div><div class="l">Falta de color</div></div>
+        <div class="kpi d3" data-filter="Falta de clear"><div class="n" id="kFcle">0</div><div class="l">Falta de clear</div></div>
+      </div>
+      <p class="note" id="dashHint">Tocá un indicador de arriba para filtrar la lista de la derecha.</p>
+      <div class="grid2">
+        <div class="panel">
+          <h3>Gráfico del período</h3>
+          <canvas id="chart" height="220"></canvas>
+          <div class="legend">
+            <span><i class="lg" style="background:var(--accent)"></i>Solicitadas</span>
+            <span><i class="lg" style="background:var(--ok)"></i>Buenas</span>
+            <span><i class="lg" style="background:#ef4444"></i>Chorreados</span>
+            <span><i class="lg" style="background:#f97316"></i>Falta de color</span>
+            <span><i class="lg" style="background:#f59e0b"></i>Falta de clear</span>
+          </div>
+        </div>
+        <div class="panel">
+          <h3 id="dashMalasTitle">Informes de piezas malas <small style="color:var(--muted)">(del período)</small></h3>
+          <div id="dashMalas"><div class="empty">Sin piezas malas en el período.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- BASE DE DATOS ---------- -->
+    <section id="tab-catalogo" class="hidden">
+      <h2 class="section">Base de datos</h2>
+      <p class="note">Organizada por <b>marca</b> (Ford, Fiat, Peugeot...). Cada marca tiene sus <b>colores</b> y sus <b>piezas</b>. Se puede agregar o quitar marcas, colores y piezas.</p>
+      <div class="grid2">
+        <!-- MARCAS -->
+        <div class="panel">
+          <h3>Marcas</h3>
+          <div id="catMarcaForm" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+            <label class="fld">Nombre de la marca<input type="text" id="mMarcaNombre" placeholder="Ej: Ford"></label>
+            <div class="fld">Colores de la marca<div class="colorchecks" id="mMarcaColores"></div></div>
+            <button class="btn" id="addMarcaBtn">Agregar marca</button>
+          </div>
+          <div id="marcaList"></div>
+        </div>
+        <!-- COLORES -->
+        <div class="panel">
+          <h3>Colores</h3>
+          <div id="catColorForm" class="inline" style="margin-bottom:12px">
+            <label class="fld" style="flex:1">Nombre<input type="text" id="coNombre" placeholder="Ej: ROJO FUEGO"></label>
+            <label class="fld">Color<input type="color" id="coHex" value="#dc2626"></label>
+            <button class="btn" id="addColorBtn">Agregar</button>
+          </div>
+          <div id="colorList"></div>
+        </div>
+      </div>
+      <!-- PIEZAS -->
+      <div class="panel" style="margin-top:14px">
+        <h3>Piezas</h3>
+        <div id="catPiezaForm" class="inline" style="margin-bottom:12px">
+          <label class="fld">Marca<select id="pmMarca"></select></label>
+          <label class="fld">Código<input type="text" id="pmCod" placeholder="Ej: 11532"></label>
+          <label class="fld" style="flex:1;min-width:200px">Nombre / modelo<input type="text" id="pmNombre" placeholder="Ej: FRONT BUMPER S/S P703"></label>
+          <button class="btn" id="addPiezaCatBtn">Agregar pieza</button>
+        </div>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Marca</th><th>Código</th><th>Nombre</th><th>Colores (de la marca)</th><th></th></tr></thead>
+            <tbody id="catBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="notifPanel" class="hidden"><h3>Notificaciones</h3><div id="notifList"></div></div>
+<div id="modalRoot"></div>
+
+<script>
+/* =============================================================
+   MAQUETA - Planilla Virtual de Producción (v3)
+   Base de datos por marcas · dashboard por tipo de defecto
+   ============================================================= */
+const LS='pv_maqueta_v4';
+const USERS=[
+  {id:'u1',nombre:'Juan Pérez',rol:'Supervisor',area:'Pintura',color:'#a78bfa'},
+  {id:'u2',nombre:'María López',rol:'Líder',area:'Pintura',color:'#22d3ee'},
+  {id:'u3',nombre:'Ana Ruiz',rol:'Supervisor',area:'Pulido',color:'#f59e0b'},
+  {id:'u4',nombre:'Diego Sosa',rol:'Líder',area:'Pulido',color:'#34d399'},
+  {id:'u5',nombre:'Pedro Gómez',rol:'Operario',area:'Pulido',color:'#94a3b8'},
+  {id:'u6',nombre:'Sofía Díaz',rol:'Programador',area:'Programación',color:'#f472b6'},
+];
+const puedeEditar=u=>u.rol==='Supervisor'||u.rol==='Líder';
+const esProgramador=u=>u.rol==='Programador';
+const esJefePintura=u=>(u.rol==='Supervisor'||u.rol==='Líder')&&u.area==='Pintura';
+const roleClass=r=>r==='Supervisor'?'r-sup':r==='Líder'?'r-lid':r==='Programador'?'r-prog':'r-ope';
+const areaClass=a=>a==='Pintura'?'a-pint':a==='Pulido'?'a-pul':'a-prog';
+const iso=d=>d.toISOString().slice(0,10);
+const dayOff=n=>{const d=new Date();d.setDate(d.getDate()-n);return iso(d);};
+function sampleFoto(label,bg){
+  const svg=`<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><rect width='140' height='140' fill='${bg}'/><rect x='18' y='34' width='104' height='58' rx='10' fill='#00000030'/><circle cx='95' cy='55' r='9' fill='#ffffffaa'/><text x='70' y='118' font-size='11' fill='#fff' text-anchor='middle' font-family='sans-serif'>${label}</text></svg>`;
+  return 'data:image/svg+xml;utf8,'+encodeURIComponent(svg);
+}
+
+function baseRows(){
+  const f=[
+    ['12111','2','PRIMER','','HBAR P703 LTD'],['12095','2','PRIMER','','RANGER P703 LTD'],
+    ['11625','12','OXFORD WHITE','6','ARCO P703'],['MP7001','16','OXFORD WHITE','8','TAPA DERECHA P703'],
+    ['MP700A','16','OXFORD WHITE','8','TAPA IZQUIERDA P703'],['MP7003','16','OXFORD WHITE','8','BOX RAIL IZQUIERDO P703'],
+    ['MP7550','18','OXFORD WHITE','9','BOX RAIL DERECHO P703'],['11529','12','OXFORD WHITE','6','REAR WHEEL LIP LH'],
+    ['11530','12','OXFORD WHITE','6','FRONT WHEEL LIP RH'],['11532','20','OXFORD WHITE','10','FRONT BUMPER S/S P703'],
+    ['11663','20','VACÍO','','—'],['11689','20','MAGNETIC GRAY','10','HBAR P703'],
+    ['11542','4','MAGNETIC GRAY','2','ARCO P703'],['11543','8','PRIMER','4','FRONT BUMPER PEUGEOT'],
+    ['8948','26','PLATA BARI','13','Fiat Delantero'],['9021','24','PLATA BARI','12','Fiat Trasero'],
+    ['10427','12','BLANCO NACRE','6','PG DELANTERO PEUGEOT'],
+  ];
+  return f.map((r,i)=>({n:i+1,cod:r[0],cant:r[1],color:r[2],perchas:r[3],obs:r[4],changedBy:null,changedAt:null,prevColor:null}));
+}
+
+function seed(){
+  const colores=[
+    {nombre:'PRIMER',hex:'#9aa0a6'},{nombre:'OXFORD WHITE',hex:'#f5f5f5'},{nombre:'MAGNETIC GRAY',hex:'#4a4f54'},
+    {nombre:'PLATA BARI',hex:'#c9ccce'},{nombre:'BLANCO NACRE',hex:'#efeae0'},{nombre:'NEGRO',hex:'#111827'},
+    {nombre:'ROJO',hex:'#dc2626'},{nombre:'AZUL',hex:'#2563eb'},{nombre:'VACÍO',hex:'transparent'},
+  ];
+  const marcas=[
+    {nombre:'Ford',colores:['PRIMER','OXFORD WHITE','MAGNETIC GRAY']},
+    {nombre:'Fiat',colores:['PLATA BARI','PRIMER','BLANCO NACRE']},
+    {nombre:'Peugeot',colores:['BLANCO NACRE','PRIMER']},
+  ];
+  const catalogo=[
+    {marca:'Ford',cod:'12111',nombre:'HBAR P703 LTD'},{marca:'Ford',cod:'12095',nombre:'RANGER P703 LTD'},
+    {marca:'Ford',cod:'11625',nombre:'ARCO P703'},{marca:'Ford',cod:'MP7001',nombre:'TAPA DERECHA P703'},
+    {marca:'Ford',cod:'MP700A',nombre:'TAPA IZQUIERDA P703'},{marca:'Ford',cod:'11532',nombre:'FRONT BUMPER S/S P703'},
+    {marca:'Ford',cod:'11689',nombre:'HBAR P703'},
+    {marca:'Fiat',cod:'8948',nombre:'Fiat Delantero'},{marca:'Fiat',cod:'9021',nombre:'Fiat Trasero'},
+    {marca:'Peugeot',cod:'10427',nombre:'PG DELANTERO PEUGEOT'},{marca:'Peugeot',cod:'11543',nombre:'FRONT BUMPER PEUGEOT'},
+  ];
+
+  const nums=['3348','3349','3350','3351','3352'];
+  const vueltas={};
+  nums.forEach((num,idx)=>{vueltas[num]={num,actual:idx===0,orden:idx,reprogramada:false,createdBy:'Sofía Díaz',rows:baseRows(),hist:[]};});
+  const v=vueltas['3348'],r=v.rows[2];
+  r.prevColor=r.color;r.color='MAGNETIC GRAY';r.changedBy='Juan Pérez';r.changedAt=Date.now()-3600e3;
+  v.hist.push({n:r.n,cod:r.cod,campo:'color',prev:'OXFORD WHITE',next:'MAGNETIC GRAY',by:'Juan Pérez',at:Date.now()-3600e3});
+  const v2=vueltas['3350'];v2.reprogramada=true;const r2=v2.rows[13],prevObs=r2.obs;
+  r2.obs='FRONT BUMPER RANGER';r2.cod='11544';
+  v2.hist.push({n:r2.n,cod:r2.cod,campo:'modelo',prev:prevObs,next:'FRONT BUMPER RANGER',by:'María López',at:Date.now()-7200e3});
+
+  const mk=(off,modelo,cod,marca,estado,def,ubic,by,bg)=>({
+    id:1000+Math.random(),fecha:dayOff(off),modelo,cod,marca,estado,by,
+    defecto:estado==='mala'?def:null,ubic:estado==='mala'?ubic:null,foto:estado==='mala'?sampleFoto(def,bg):null});
+  const piezas=[
+    mk(0,'FRONT BUMPER S/S P703','11532','Ford','buena',null,null,'Diego Sosa'),
+    mk(0,'FRONT BUMPER S/S P703','11532','Ford','buena',null,null,'Diego Sosa'),
+    mk(0,'ARCO P703','11625','Ford','buena',null,null,'Pedro Gómez'),
+    mk(0,'HBAR P703','11689','Ford','mala','Chorreada','esquina inferior derecha','Pedro Gómez','#4a4f54'),
+    mk(0,'Fiat Delantero','8948','Fiat','mala','Falta de clear','zona central','Diego Sosa','#c9ccce'),
+    mk(1,'TAPA DERECHA P703','MP7001','Ford','buena',null,null,'Pedro Gómez'),
+    mk(1,'TAPA IZQUIERDA P703','MP700A','Ford','buena',null,null,'Pedro Gómez'),
+    mk(1,'Fiat Trasero','9021','Fiat','mala','Falta de color','borde izquierdo','Diego Sosa','#c9ccce'),
+    mk(2,'HBAR P703 LTD','12111','Ford','mala','Chorreada','parrilla frontal','Pedro Gómez','#9aa0a6'),
+    mk(3,'BOX RAIL DERECHO P703','MP7550','Ford','buena',null,null,'Diego Sosa'),
+    mk(6,'PG DELANTERO PEUGEOT','10427','Peugeot','mala','Falta de clear','parrilla frontal','Pedro Gómez','#efeae0'),
+    mk(18,'RANGER P703 LTD','12095','Ford','buena',null,null,'Pedro Gómez'),
+  ];
+  const notifs=[];
+  piezas.filter(p=>p.estado==='mala').forEach(p=>notifs.push({id:p.id,tipo:'pieza_mala',fecha:p.fecha,
+    modelo:p.modelo,defecto:p.defecto,ubic:p.ubic,by:p.by,at:new Date(p.fecha+'T10:00').getTime(),read:false}));
+  notifs.push({id:9001,tipo:'cambio',vuelta:'3348',n:3,obs:'ARCO P703',campo:'color',
+    prev:'OXFORD WHITE',next:'MAGNETIC GRAY',by:'Juan Pérez',at:Date.now()-3600e3,read:true});
+
+  return {vueltas,notifs,piezas,colores,marcas,catalogo};
+}
+
+let DB=load();
+function load(){try{const d=JSON.parse(localStorage.getItem(LS));return d&&d.vueltas?d:seed();}catch(e){return seed();}}
+function save(){localStorage.setItem(LS,JSON.stringify(DB));}
+let ME=null,curVuelta='3348';
+
+/* colores dinámicos */
+function colorHex(n){const c=DB.colores.find(x=>x.nombre===n);return c?c.hex:(n==='VACÍO'?'transparent':'#666');}
+function colorDot(c){
+  const hex=colorHex(c);
+  const st=(c==='VACÍO'||hex==='transparent')?'border:1px dashed #888;background:repeating-linear-gradient(45deg,#222,#222 4px,#333 4px,#333 8px)':`background:${hex}`;
+  return `<span class="dot" style="${st}"></span>`;
+}
+function coloresDe(cod,current){
+  let cols=[];const p=DB.catalogo.find(c=>c.cod===cod);
+  if(p){const m=DB.marcas.find(x=>x.nombre===p.marca);if(m)cols=(m.colores||[]).slice();}
+  if(!cols.length)cols=DB.colores.map(c=>c.nombre);
+  if(current&&!cols.includes(current))cols.unshift(current);
+  return cols;
+}
+function fillColorSelect(sel,cols,current){
+  sel.innerHTML=cols.map(c=>`<option value="${c}" ${c===current?'selected':''}>${c}</option>`).join('');
+}
+
+/* ---------- LOGIN ---------- */
+function renderLogin(){
+  const el=document.getElementById('userList');el.innerHTML='';
+  USERS.forEach(u=>{
+    const b=document.createElement('button');b.className='userbtn';
+    b.innerHTML=`<span class="avatar" style="background:${u.color}">${initials(u.nombre)}</span>
+      <span style="flex:1"><div style="font-weight:600">${u.nombre}</div>
+      <span class="role-tag ${roleClass(u.rol)}">${u.rol}</span><span class="area-tag ${areaClass(u.area)}">${u.area}</span></span>`;
+    b.onclick=()=>doLogin(u);el.appendChild(b);
+  });
+}
+const initials=n=>n.split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase();
+function doLogin(u){
+  ME=u;
+  document.getElementById('login').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('meName').textContent=u.nombre;
+  document.getElementById('meRoleArea').innerHTML=`<span class="role-tag ${roleClass(u.rol)}">${u.rol}</span><span class="area-tag ${areaClass(u.area)}">${u.area}</span>`;
+  const av=document.getElementById('meAvatar');av.textContent=initials(u.nombre);av.style.background=u.color;
+  document.getElementById('planillaRoleHint').textContent=
+    esProgramador(u)?'Podés crear vueltas y agregar/quitar ítems.':puedeEditar(u)?'Podés editar color y modelo.':'Modo solo lectura (Operario).';
+  document.getElementById('progControls').classList.toggle('hidden',!esProgramador(u));
+  const editaDB=puedeEditar(u)||esProgramador(u);
+  ['catMarcaForm','catColorForm','catPiezaForm'].forEach(id=>document.getElementById(id).classList.toggle('hidden',!editaDB));
+  try{if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();}catch(e){}
+  initVueltas();renderAll();
+}
+document.getElementById('logoutBtn').onclick=()=>{ME=null;
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('login').classList.remove('hidden');
+  document.getElementById('notifPanel').classList.add('hidden');
+};
+
+/* ---------- NAV ---------- */
+document.querySelectorAll('.tabs button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    ['planilla','pulido','dashboard','catalogo'].forEach(t=>
+      document.getElementById('tab-'+t).classList.toggle('hidden',t!==b.dataset.tab));
+    if(b.dataset.tab==='dashboard')renderDashboard();
+    if(b.dataset.tab==='pulido')renderPulido();
+    if(b.dataset.tab==='catalogo')renderCatalogo();
+  };
+});
+
+/* ---------- PLANILLA ---------- */
+function initVueltas(){
+  const sel=document.getElementById('vueltaSel');sel.innerHTML='';
+  Object.values(DB.vueltas).sort((a,b)=>a.orden-b.orden).forEach(v=>{
+    const o=document.createElement('option');o.value=v.num;
+    o.textContent=v.actual?`${v.num} · actual`:`${v.num} · próx ${v.orden}`;sel.appendChild(o);
+  });
+  sel.value=curVuelta;sel.onchange=()=>{curVuelta=sel.value;renderPlanilla();};
+}
+function renderPlanilla(){
+  const v=DB.vueltas[curVuelta];
+  document.getElementById('vueltaMeta').textContent=
+    (v.actual?'En curso':'Próxima (+'+v.orden+')')+' · '+v.rows.length+' ítems'+(v.createdBy?' · creada por '+v.createdBy:'');
+  const body=document.getElementById('planillaBody');body.innerHTML='';
+  const puedeEd=puedeEditar(ME)||esProgramador(ME);
+  v.rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    const changed=r.changedBy?`<span class="changed" title="Antes: ${r.prevColor} · ${r.changedBy} · ${fmt(r.changedAt)}">✎</span>`:'';
+    tr.innerHTML=`<td>${r.n}</td><td>${r.cod}</td><td>${r.cant}</td>
+      <td><span class="swatch">${colorDot(r.color)} <b>${r.color}</b>${changed}</span></td>
+      <td>${r.perchas||'—'}</td><td>${r.obs}</td><td></td>`;
+    const td=tr.lastElementChild;
+    if(puedeEd){
+      const wrap=document.createElement('div');wrap.style.cssText='display:flex;gap:6px';
+      const btn=document.createElement('button');btn.className='btn small';btn.textContent='Editar';
+      btn.onclick=()=>openEditModal(r.n);wrap.appendChild(btn);
+      if(esProgramador(ME)){const del=document.createElement('button');del.className='btn small danger';del.textContent='Quitar';
+        del.onclick=()=>delRow(r.n);wrap.appendChild(del);}
+      td.appendChild(wrap);
+    }else td.innerHTML='<span style="color:var(--muted);font-size:12px">—</span>';
+    body.appendChild(tr);
+  });
+  if(!v.rows.length)body.innerHTML='<tr><td colspan="7" class="empty">Vuelta sin ítems. Usá "Agregar ítem".</td></tr>';
+  document.getElementById('reproBanner').innerHTML=v.reprogramada?'<span class="repro">VUELTA REPROGRAMADA</span>':'';
+  // recuento automático
+  const totalPerchas=v.rows.reduce((s,r)=>s+(parseInt(r.perchas)||0),0);
+  const totalVacios=v.rows.filter(r=>r.color==='VACÍO').length;
+  const totalPiezas=v.rows.reduce((s,r)=>s+(parseInt(r.cant)||0),0);
+  document.getElementById('vueltaResumen').innerHTML=
+    `<span class="hintpill">🧰 Perchas cargadas: <b>${totalPerchas}</b></span>
+     <span class="hintpill">⬜ Vacíos: <b>${totalVacios}</b></span>
+     <span class="hintpill">📦 Total piezas: <b>${totalPiezas}</b></span>`;
+  renderHist();
+}
+function renderHist(){
+  const v=DB.vueltas[curVuelta],box=document.getElementById('histBox');
+  if(!v.hist.length){box.innerHTML='<div class="empty">Sin cambios registrados todavía.</div>';return;}
+  box.innerHTML=v.hist.slice().reverse().map(h=>
+    `<div class="hist">Ítem ${h.n} — ${h.campo==='color'?'Color':'Modelo'}: <b>${h.prev}</b> → <b>${h.next}</b> · por ${h.by} · ${fmt(h.at)}</div>`).join('');
+}
+function openEditModal(n){
+  const v=DB.vueltas[curVuelta],r=v.rows.find(x=>x.n===n);
+  const opts=coloresDe(r.cod,r.color).map(c=>`<option value="${c}" ${c===r.color?'selected':''}>${c}</option>`).join('');
+  const nombres=DB.catalogo.map(c=>`<option value="${c.nombre}">`).join('');
+  showModal(`
+    <h3>Editar ítem ${r.n}</h3>
+    <p style="color:var(--muted);font-size:13px;margin:0 0 12px">Código: <b id="mCod">${r.cod}</b></p>
+    <label class="fld">Modelo / Observaciones
+      <input type="text" id="mObs" list="mNombres" value="${r.obs.replace(/"/g,'&quot;')}">
+      <datalist id="mNombres">${nombres}</datalist></label>
+    <label class="fld" style="margin-top:10px">Color<select id="mColor">${opts}</select></label>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px">
+      <input type="checkbox" id="chkRepro" ${v.reprogramada?'checked':''}> Marcar esta vuelta como <b>reprogramada</b></label>
+    <div class="actions"><button class="btn ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn" id="confirmEdit">Guardar</button></div>`);
+  document.getElementById('mObs').addEventListener('input',e=>{
+    const cat=DB.catalogo.find(c=>c.nombre.toLowerCase()===e.target.value.trim().toLowerCase());
+    if(cat)document.getElementById('mCod').textContent=cat.cod;
+  });
+  document.getElementById('confirmEdit').onclick=()=>{
+    const nc=document.getElementById('mColor').value;
+    const nObs=document.getElementById('mObs').value.trim()||r.obs;
+    const newCod=document.getElementById('mCod').textContent;
+    v.reprogramada=document.getElementById('chkRepro').checked;
+    if(nc!==r.color){const prev=r.color;r.prevColor=prev;r.color=nc;r.changedBy=ME.nombre;r.changedAt=Date.now();
+      v.hist.push({n:r.n,cod:r.cod,campo:'color',prev,next:nc,by:ME.nombre,at:Date.now()});
+      pushNotif({tipo:'cambio',vuelta:curVuelta,n:r.n,obs:r.obs,campo:'color',prev,next:nc,by:ME.nombre,at:Date.now(),read:false});}
+    if(nObs!==r.obs){const prev=r.obs;r.obs=nObs;r.cod=newCod;
+      v.hist.push({n:r.n,cod:r.cod,campo:'modelo',prev,next:nObs,by:ME.nombre,at:Date.now()});
+      pushNotif({tipo:'cambio',vuelta:curVuelta,n:r.n,obs:nObs,campo:'modelo',prev,next:nObs,by:ME.nombre,at:Date.now(),read:false});}
+    save();closeModal();renderPlanilla();renderNotifs();
+  };
+}
+
+/* ---------- PROGRAMADOR: crear vuelta / ítems ---------- */
+document.getElementById('newVueltaBtn').onclick=()=>{
+  showModal(`<h3>Nueva vuelta</h3>
+    <label class="fld">Número de vuelta<input type="text" id="nvNum" placeholder="Ej: 3353"></label>
+    <div class="actions"><button class="btn ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn" id="nvOk">Crear vuelta</button></div>`);
+  document.getElementById('nvOk').onclick=()=>{
+    const num=document.getElementById('nvNum').value.trim();
+    if(!num){alert('Poné el número de vuelta.');return;}
+    if(DB.vueltas[num]){alert('Ya existe esa vuelta.');return;}
+    const orden=Math.max(0,...Object.values(DB.vueltas).map(v=>v.orden))+1;
+    DB.vueltas[num]={num,actual:false,orden,reprogramada:false,createdBy:ME.nombre,rows:[],hist:[]};
+    curVuelta=num;save();closeModal();initVueltas();document.getElementById('vueltaSel').value=num;renderPlanilla();
+  };
+};
+document.getElementById('addRowBtn').onclick=()=>openAddRow();
+function openAddRow(){
+  const v=DB.vueltas[curVuelta];
+  const nombres=DB.catalogo.map(c=>`<option value="${c.nombre}">`).join('');
+  showModal(`<h3>Agregar ítem a vuelta ${curVuelta}</h3>
+    <label class="fld">Pieza (nombre)<input type="text" id="arObs" list="arNombres" placeholder="Escribí el nombre..."><datalist id="arNombres">${nombres}</datalist></label>
+    <div class="inline" style="margin-top:8px">
+      <label class="fld" style="flex:1">Código<input type="text" id="arCod" placeholder="—"></label>
+      <label class="fld" style="width:90px">Perchas<input type="number" id="arPer" min="0" placeholder="0"></label>
+      <label class="fld" style="width:100px">Cantidad<input type="number" id="arCant" value="0" min="0"></label>
+    </div>
+    <label class="fld" style="margin-top:8px">Color<select id="arColor"></select></label>
+    <p class="note" style="margin-top:10px">La cantidad se calcula sola como <b>perchas × 2</b> (2 paragolpes por percha). La podés editar a mano.</p>
+    <div class="actions"><button class="btn ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn" id="arOk">Agregar</button></div>`);
+  const arColor=document.getElementById('arColor');
+  fillColorSelect(arColor,DB.colores.map(c=>c.nombre));
+  document.getElementById('arObs').addEventListener('input',e=>{
+    const cat=DB.catalogo.find(c=>c.nombre.toLowerCase()===e.target.value.trim().toLowerCase());
+    if(cat){document.getElementById('arCod').value=cat.cod;fillColorSelect(arColor,coloresDe(cat.cod));}
+    else{document.getElementById('arCod').value='';fillColorSelect(arColor,DB.colores.map(c=>c.nombre));}
+  });
+  document.getElementById('arPer').addEventListener('input',e=>{
+    document.getElementById('arCant').value=(parseInt(e.target.value)||0)*2;
+  });
+  document.getElementById('arOk').onclick=()=>{
+    const obs=document.getElementById('arObs').value.trim();
+    if(!obs){alert('Poné el nombre de la pieza.');return;}
+    v.rows.push({n:v.rows.length+1,cod:document.getElementById('arCod').value.trim()||'—',
+      cant:document.getElementById('arCant').value||'0',color:document.getElementById('arColor').value,
+      perchas:document.getElementById('arPer').value.trim(),obs,changedBy:null,changedAt:null,prevColor:null});
+    save();closeModal();renderPlanilla();
+  };
+}
+function delRow(n){
+  const v=DB.vueltas[curVuelta];
+  if(!confirm('¿Quitar este ítem de la vuelta?'))return;
+  v.rows=v.rows.filter(r=>r.n!==n).map((r,i)=>({...r,n:i+1}));
+  save();renderPlanilla();
+}
+
+/* ---------- NOTIFICACIONES ---------- */
+function pushNotif(n){DB.notifs.push(n);systemNotif(n);}
+function systemNotif(n){
+  let title,body;
+  if(n.tipo==='pieza_mala'){title='⚠️ Pieza MALA en Pulido (para Pintura)';body=`${n.modelo} · ${n.defecto} · ${n.ubic||''}`;}
+  else{title='🎨 Cambio en planilla';body=`Vuelta ${n.vuelta} ítem ${n.n}: ${n.prev} → ${n.next} (${n.by})`;}
+  try{if('Notification'in window&&Notification.permission==='granted')new Notification(title,{body});}catch(e){}
+}
+function visibleNotifs(){return DB.notifs.filter(n=>n.tipo==='pieza_mala'?esJefePintura(ME):true);}
+document.getElementById('bellBtn').onclick=()=>{
+  const p=document.getElementById('notifPanel');const show=p.classList.contains('hidden');p.classList.toggle('hidden');
+  if(show){visibleNotifs().forEach(n=>n.read=true);save();renderNotifs();}
+};
+function renderNotifs(){
+  const vis=visibleNotifs();const unread=vis.filter(n=>!n.read).length;
+  const badge=document.getElementById('bellBadge');badge.textContent=unread;badge.classList.toggle('hidden',unread===0);
+  const list=document.getElementById('notifList');
+  if(!vis.length){list.innerHTML='<div class="empty">Sin notificaciones.</div>';return;}
+  list.innerHTML=vis.slice().reverse().slice(0,40).map(n=>{
+    if(n.tipo==='pieza_mala')return `<div class="notif ${n.read?'':'unread'}">⚠️ <b>Pieza MALA</b> en Pulido<br>${n.modelo} — ${n.defecto}<br>
+      <small>Ubicación: ${n.ubic||'—'} · por ${n.by} · ${fmt(n.at)}</small></div>`;
+    return `<div class="notif ${n.read?'':'unread'}">🎨 <b>Cambio de ${n.campo}</b> — Vuelta ${n.vuelta}, ítem ${n.n} (${n.obs})<br>
+      <span>${n.prev} → <b>${n.next}</b></span><br><small>por ${n.by} · ${fmt(n.at)}</small></div>`;
+  }).join('');
+}
+
+/* ---------- PULIDO ---------- */
+document.getElementById('pEstado').onchange=e=>document.getElementById('malaFields').classList.toggle('hidden',e.target.value!=='mala');
+document.getElementById('pModelo').addEventListener('input',e=>{
+  const cat=DB.catalogo.find(c=>c.nombre.toLowerCase()===e.target.value.trim().toLowerCase());
+  document.getElementById('pCod').value=cat?cat.cod:'';
+  document.getElementById('pMarca').value=cat?cat.marca:'';
+});
+let fotoData=null;
+document.getElementById('pFoto').onchange=e=>{const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();rd.onload=ev=>{fotoData=ev.target.result;const img=document.getElementById('pPreview');img.src=fotoData;img.classList.remove('hidden');};rd.readAsDataURL(f);};
+document.getElementById('addPiezaBtn').onclick=()=>{
+  const fecha=document.getElementById('pFecha').value,modelo=document.getElementById('pModelo').value.trim();
+  const cod=document.getElementById('pCod').value.trim(),marca=document.getElementById('pMarca').value.trim();
+  const estado=document.getElementById('pEstado').value;
+  if(!fecha||!modelo){alert('Completá fecha y nombre de pieza.');return;}
+  const p={id:Date.now(),fecha,modelo,cod,marca,estado,by:ME.nombre};
+  if(estado==='mala'){p.defecto=document.getElementById('pDefecto').value;p.ubic=document.getElementById('pUbic').value.trim();p.foto=fotoData;
+    pushNotif({tipo:'pieza_mala',fecha,modelo,defecto:p.defecto,ubic:p.ubic,by:ME.nombre,at:Date.now(),read:false});}
+  DB.piezas.push(p);save();
+  document.getElementById('pModelo').value='';document.getElementById('pCod').value='';document.getElementById('pMarca').value='';
+  document.getElementById('pUbic').value='';document.getElementById('pFoto').value='';fotoData=null;
+  document.getElementById('pPreview').classList.add('hidden');
+  renderPulido();renderNotifs();
+  alert(estado==='mala'?'Pieza mala guardada. Se notificó a Pintura ✔':'Pieza guardada ✔');
+};
+function renderPulido(){
+  fillDatalist();
+  const fecha=document.getElementById('pFecha').value;document.getElementById('pulidoFechaLbl').textContent=fecha||'';
+  const list=document.getElementById('pulidoList');const items=DB.piezas.filter(p=>p.fecha===fecha);
+  list.innerHTML=items.length?items.slice().reverse().map(piezaCard).join(''):'<div class="empty">Sin piezas cargadas para esta fecha.</div>';
+}
+document.getElementById('pFecha').onchange=renderPulido;
+function piezaCard(p){
+  const img=p.foto?`<img src="${p.foto}" class="zoom" alt="foto del defecto">`:'';
+  const det=p.estado==='mala'?`<div style="font-size:12px;color:var(--muted)">Defecto: <b>${p.defecto}</b> · Ubicación: ${p.ubic||'—'}</div>`
+    :`<div style="font-size:12px;color:var(--muted)">Pieza conforme</div>`;
+  const mtag=p.marca?`<span class="marca-tag">${p.marca}</span>`:'';
+  return `<div class="piezacard">${img}<div style="flex:1">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+      <b>${p.modelo}${p.cod?' <span style="color:var(--muted);font-weight:400">('+p.cod+')</span>':''}</b>
+      <span class="est ${p.estado}">${p.estado==='mala'?'MALA':'BUENA'}</span></div>
+    <div style="margin:4px 0">${mtag}</div>${det}
+    <div style="font-size:11px;color:var(--muted);margin-top:4px">Cargó: ${p.by} · ${p.fecha}</div></div></div>`;
+}
+function fillDatalist(){document.getElementById('listaPiezas').innerHTML=DB.catalogo.map(c=>`<option value="${c.nombre}">${c.cod} · ${c.marca}</option>`).join('');}
+
+/* ---------- BASE DE DATOS ---------- */
+function renderCatalogo(){
+  const editaDB=puedeEditar(ME)||esProgramador(ME);
+  document.getElementById('mMarcaColores').innerHTML=DB.colores.map(c=>
+    `<label><input type="checkbox" value="${c.nombre}"> ${colorDot(c.nombre)} ${c.nombre}</label>`).join('');
+  document.getElementById('pmMarca').innerHTML=DB.marcas.map(m=>`<option value="${m.nombre}">${m.nombre}</option>`).join('');
+  // lista de marcas (con editar)
+  document.getElementById('marcaList').innerHTML=DB.marcas.map((m,i)=>{
+    const nPiezas=DB.catalogo.filter(c=>c.marca===m.nombre).length;
+    return `<div class="piezacard" style="align-items:center">
+      <div style="flex:1"><b>${m.nombre}</b> <span style="color:var(--muted);font-size:12px">(${nPiezas} piezas)</span>
+      <div style="margin-top:4px">${(m.colores||[]).map(x=>colorDot(x)+' '+x).join(' · ')||'<span style="color:var(--muted)">sin colores</span>'}</div></div>
+      ${editaDB?`<div style="display:flex;gap:6px"><button class="btn small" onclick="openMarcaModal(${i})">Editar</button>
+        <button class="btn small danger" onclick="delMarca(${i})">Quitar</button></div>`:''}</div>`;
+  }).join('')||'<div class="empty">Sin marcas.</div>';
+  // lista de colores
+  document.getElementById('colorList').innerHTML=DB.colores.map((c,i)=>`<div class="piezacard" style="align-items:center;padding:8px 10px">
+      <div style="flex:1">${colorDot(c.nombre)} <b>${c.nombre}</b> <span style="color:var(--muted)">${c.hex}</span></div>
+      ${editaDB?`<button class="btn small danger" onclick="delColor(${i})">Quitar</button>`:''}</div>`).join('')
+      ||'<div class="empty">Sin colores.</div>';
+  // tabla de piezas
+  document.getElementById('catBody').innerHTML=DB.catalogo.map((c,i)=>{
+    const m=DB.marcas.find(x=>x.nombre===c.marca);
+    const cols=m?(m.colores||[]).map(x=>colorDot(x)).join(' '):'';
+    return `<tr><td><span class="marca-tag">${c.marca}</span></td><td>${c.cod}</td><td>${c.nombre}</td>
+      <td>${cols||'—'}</td><td>${editaDB?`<button class="btn small danger" onclick="delPieza(${i})">Quitar</button>`:''}</td></tr>`;
+  }).join('')||'<tr><td colspan="5" class="empty">Sin piezas.</td></tr>';
+}
+
+/* editar marca: colores + piezas de esa marca */
+function openMarcaModal(i){
+  const m=DB.marcas[i];
+  const checks=DB.colores.map(c=>`<label><input type="checkbox" value="${c.nombre}" ${(m.colores||[]).includes(c.nombre)?'checked':''}> ${colorDot(c.nombre)} ${c.nombre}</label>`).join('');
+  const piezas=DB.catalogo.filter(c=>c.marca===m.nombre);
+  const piezasHtml=piezas.length?piezas.map(p=>`<div class="piezacard" style="padding:6px 10px;align-items:center">
+      <div style="flex:1"><b>${p.nombre}</b> <span style="color:var(--muted)">(${p.cod})</span></div>
+      <button class="btn small danger" onclick="marcaDelPieza('${p.cod.replace(/'/g,"")}',${i})">Quitar</button></div>`).join('')
+      :'<div class="empty">Esta marca no tiene piezas.</div>';
+  showModal(`<h3>Editar marca</h3>
+    <label class="fld">Nombre<input type="text" id="mmNombre" value="${m.nombre.replace(/"/g,'&quot;')}"></label>
+    <div class="fld" style="margin-top:10px">Colores de la marca<div class="colorchecks" id="mmColores">${checks}</div></div>
+    <div class="fld" style="margin-top:12px">Piezas de la marca${piezasHtml}</div>
+    <div class="inline" style="margin-top:8px">
+      <label class="fld" style="width:120px">Código<input type="text" id="mmPCod" placeholder="cód."></label>
+      <label class="fld" style="flex:1">Nombre pieza<input type="text" id="mmPNombre" placeholder="nombre"></label>
+      <button class="btn ghost small" onclick="marcaAddPieza(${i})">Agregar pieza</button>
+    </div>
+    <div class="actions"><button class="btn ghost" onclick="closeModal()">Cerrar</button>
+      <button class="btn" onclick="marcaSave(${i})">Guardar cambios</button></div>`);
+}
+function marcaAddPieza(i){
+  const m=DB.marcas[i],cod=document.getElementById('mmPCod').value.trim(),nombre=document.getElementById('mmPNombre').value.trim();
+  if(!cod||!nombre){alert('Completá código y nombre de la pieza.');return;}
+  const ex=DB.catalogo.find(c=>c.cod===cod);
+  if(ex){ex.marca=m.nombre;ex.nombre=nombre;}else DB.catalogo.push({marca:m.nombre,cod,nombre});
+  save();fillDatalist();openMarcaModal(i);
+}
+function marcaDelPieza(cod,i){
+  const idx=DB.catalogo.findIndex(c=>c.cod===cod);
+  if(idx>=0){DB.catalogo.splice(idx,1);save();fillDatalist();}
+  openMarcaModal(i);
+}
+function marcaSave(i){
+  const m=DB.marcas[i];
+  const nuevo=document.getElementById('mmNombre').value.trim()||m.nombre;
+  const colores=[...document.querySelectorAll('#mmColores input:checked')].map(x=>x.value);
+  if(nuevo!==m.nombre){
+    DB.catalogo.forEach(c=>{if(c.marca===m.nombre)c.marca=nuevo;});
+    DB.piezas.forEach(p=>{if(p.marca===m.nombre)p.marca=nuevo;});
+    m.nombre=nuevo;
+  }
+  m.colores=colores;save();closeModal();renderCatalogo();fillDatalist();
+}
+document.getElementById('addMarcaBtn').onclick=()=>{
+  const nombre=document.getElementById('mMarcaNombre').value.trim();
+  const colores=[...document.querySelectorAll('#mMarcaColores input:checked')].map(i=>i.value);
+  if(!nombre){alert('Poné el nombre de la marca.');return;}
+  const ex=DB.marcas.find(m=>m.nombre.toLowerCase()===nombre.toLowerCase());
+  if(ex)ex.colores=colores;else DB.marcas.push({nombre,colores});
+  save();document.getElementById('mMarcaNombre').value='';renderCatalogo();alert('Marca guardada ✔');
+};
+document.getElementById('addColorBtn').onclick=()=>{
+  const nombre=document.getElementById('coNombre').value.trim(),hex=document.getElementById('coHex').value;
+  if(!nombre){alert('Poné el nombre del color.');return;}
+  const ex=DB.colores.find(c=>c.nombre.toLowerCase()===nombre.toLowerCase());
+  if(ex)ex.hex=hex;else DB.colores.push({nombre,hex});
+  save();document.getElementById('coNombre').value='';renderCatalogo();alert('Color guardado ✔');
+};
+document.getElementById('addPiezaCatBtn').onclick=()=>{
+  const marca=document.getElementById('pmMarca').value,cod=document.getElementById('pmCod').value.trim(),nombre=document.getElementById('pmNombre').value.trim();
+  if(!marca||!cod||!nombre){alert('Completá marca, código y nombre.');return;}
+  const ex=DB.catalogo.find(c=>c.cod===cod);
+  if(ex){ex.marca=marca;ex.nombre=nombre;}else DB.catalogo.push({marca,cod,nombre});
+  save();document.getElementById('pmCod').value='';document.getElementById('pmNombre').value='';
+  renderCatalogo();fillDatalist();alert('Pieza guardada ✔');
+};
+function delMarca(i){if(confirm('¿Quitar esta marca?')){DB.marcas.splice(i,1);save();renderCatalogo();}}
+function delColor(i){if(confirm('¿Quitar este color?')){DB.colores.splice(i,1);save();renderCatalogo();}}
+function delPieza(i){if(confirm('¿Quitar esta pieza?')){DB.catalogo.splice(i,1);save();renderCatalogo();fillDatalist();}}
+
+/* ---------- DASHBOARD ---------- */
+function periodMatch(fecha,periodo,ref){
+  const d=new Date(fecha+'T00:00'),r=new Date(ref+'T00:00');
+  if(periodo==='dia')return fecha===ref;
+  if(periodo==='anio')return d.getFullYear()===r.getFullYear();
+  if(periodo==='mes')return d.getFullYear()===r.getFullYear()&&d.getMonth()===r.getMonth();
+  if(periodo==='semana'){const s=new Date(r);s.setDate(r.getDate()-((r.getDay()+6)%7));const e=new Date(s);e.setDate(s.getDate()+6);return d>=s&&d<=e;}
+}
+let dashFilter='malas'; // malas | todos | buena | Chorreada | Falta de color | Falta de clear
+const FILTER_LABEL={malas:'Piezas malas',todos:'Todas las piezas',buena:'Piezas buenas',
+  'Chorreada':'Chorreados','Falta de color':'Falta de color','Falta de clear':'Falta de clear'};
+function renderDashboard(){
+  const periodo=document.getElementById('dPeriodo').value,ref=document.getElementById('dFecha').value;
+  const items=DB.piezas.filter(p=>periodMatch(p.fecha,periodo,ref));
+  const buenas=items.filter(p=>p.estado==='buena').length;
+  const chor=items.filter(p=>p.estado==='mala'&&p.defecto==='Chorreada').length;
+  const fcol=items.filter(p=>p.estado==='mala'&&p.defecto==='Falta de color').length;
+  const fcle=items.filter(p=>p.estado==='mala'&&p.defecto==='Falta de clear').length;
+  const malas=chor+fcol+fcle,solicitadas=buenas+malas;
+  document.getElementById('kSol').textContent=solicitadas;
+  document.getElementById('kOk').textContent=buenas;
+  document.getElementById('kChor').textContent=chor;
+  document.getElementById('kFcol').textContent=fcol;
+  document.getElementById('kFcle').textContent=fcle;
+  drawChart([['Solic.',solicitadas,'#38bdf8'],['Buenas',buenas,'#22c55e'],['Chorr.',chor,'#ef4444'],['F.color',fcol,'#f97316'],['F.clear',fcle,'#f59e0b']]);
+  // marcar KPI activo
+  document.querySelectorAll('.kpi').forEach(k=>k.classList.toggle('active',k.dataset.filter===dashFilter));
+  // lista filtrada
+  let list;
+  if(dashFilter==='todos')list=items;
+  else if(dashFilter==='buena')list=items.filter(p=>p.estado==='buena');
+  else if(dashFilter==='malas')list=items.filter(p=>p.estado==='mala');
+  else list=items.filter(p=>p.estado==='mala'&&p.defecto===dashFilter);
+  document.getElementById('dashMalasTitle').innerHTML=`${FILTER_LABEL[dashFilter]} <small style="color:var(--muted)">(${list.length} · del período)</small>`;
+  document.getElementById('dashMalas').innerHTML=list.length?list.slice().reverse().map(piezaCard).join(''):'<div class="empty">Sin piezas en esta categoría.</div>';
+}
+document.getElementById('dPeriodo').onchange=renderDashboard;
+document.getElementById('dFecha').onchange=renderDashboard;
+document.querySelectorAll('.kpi').forEach(k=>k.onclick=()=>{
+  dashFilter=(dashFilter===k.dataset.filter)?'malas':k.dataset.filter; // volver a tocar = reset a malas
+  renderDashboard();
+});
+function drawChart(data){
+  const c=document.getElementById('chart'),ctx=c.getContext('2d');
+  const W=c.width=c.clientWidth*devicePixelRatio,H=c.height=220*devicePixelRatio;ctx.clearRect(0,0,W,H);
+  const max=Math.max(1,...data.map(d=>d[1])),pad=30*devicePixelRatio,bw=W/data.length;
+  data.forEach((d,i)=>{const h=(H-pad*2)*(d[1]/max),x=i*bw+bw*0.2,y=H-pad-h,w=bw*0.6;
+    ctx.fillStyle=d[2];ctx.fillRect(x,y,w,h);
+    ctx.fillStyle='#e2e8f0';ctx.font=`${12*devicePixelRatio}px sans-serif`;ctx.textAlign='center';
+    ctx.fillText(d[1],x+w/2,y-6*devicePixelRatio);
+    ctx.fillStyle='#94a3b8';ctx.fillText(d[0],x+w/2,H-8*devicePixelRatio);});
+}
+
+/* ---------- Helpers ---------- */
+function fmt(ts){const d=new Date(ts);return d.toLocaleDateString('es-AR')+' '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});}
+function showModal(html){document.getElementById('modalRoot').innerHTML=`<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`;}
+function closeModal(){document.getElementById('modalRoot').innerHTML='';}
+/* ver foto en grande (lightbox) */
+function openFoto(src){
+  const w=document.createElement('div');w.className='lightbox';w.id='lightbox';
+  w.innerHTML=`<button class="close">×</button><img src="${src}"><div class="cap">Tocá afuera o × para cerrar</div>`;
+  w.onclick=e=>{if(e.target===w||e.target.className==='close')w.remove();};
+  document.body.appendChild(w);
+}
+document.addEventListener('click',e=>{if(e.target.classList&&e.target.classList.contains('zoom'))openFoto(e.target.src);});
+function renderAll(){
+  const today=new Date().toISOString().slice(0,10);
+  document.getElementById('pFecha').value=today;document.getElementById('dFecha').value=today;
+  fillDatalist();renderPlanilla();renderNotifs();renderPulido();renderCatalogo();
+}
+renderLogin();
+</script>
+</body>
+</html>
