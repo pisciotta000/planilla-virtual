@@ -317,6 +317,11 @@
    Base de datos por marcas · dashboard por tipo de defecto
    ============================================================= */
 const LS='pv_maqueta_v5';
+/* ── Memoria compartida en la nube (Firebase Realtime Database) ──
+   Pegá entre las comillas la URL de tu base (termina en .firebaseio.com), por ej:
+   const FB_URL='https://tu-proyecto-default-rtdb.firebaseio.com';
+   Si queda vacío, la maqueta guarda SOLO en este dispositivo (como antes). */
+const FB_URL='';
 const USERS=[
   {id:'u1',nombre:'Corbalán Hernán',rol:'Supervisor',area:'Pintura',color:'#a78bfa'},
   {id:'u2',nombre:'Cuenca Ezequiel',rol:'Líder',area:'Pintura',color:'#22d3ee'},
@@ -410,8 +415,41 @@ function seed(){
 
 let DB=load();
 function load(){try{const d=JSON.parse(localStorage.getItem(LS));return d&&d.vueltas?d:seed();}catch(e){return seed();}}
-function save(){localStorage.setItem(LS,JSON.stringify(DB));}
+function save(){localStorage.setItem(LS,JSON.stringify(DB));cloudPush();}
 let ME=null,curVuelta='3348';
+
+/* ---------- Memoria compartida (Firebase Realtime Database vía REST) ----------
+   El estado completo se guarda como TEXTO JSON en la nube. Se guarda como string
+   (y no como objeto anidado) a propósito: así Firebase no descarta los arrays
+   vacíos ni los valores null que usa la maqueta. */
+const cloudOn=()=>!!FB_URL;
+const cloudURL=()=>FB_URL.replace(/\/+$/,'')+'/pv_state.json';
+function cloudPush(){ if(!cloudOn())return;
+  fetch(cloudURL(),{method:'PUT',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(JSON.stringify(DB))}).catch(()=>{}); }
+function applyRemote(s){
+  if(!s||!s.vueltas)return;
+  if(JSON.stringify(s)===JSON.stringify(DB))return;      // sin cambios o eco de mi propia escritura
+  DB=s; localStorage.setItem(LS,JSON.stringify(DB));
+  if(ME){ if(!DB.vueltas[curVuelta])curVuelta=Object.keys(DB.vueltas)[0]; initVueltas(); renderAll(); }
+}
+async function cloudInit(){ if(!cloudOn())return;
+  try{
+    const raw=await (await fetch(cloudURL())).json();
+    if(raw){ applyRemote(JSON.parse(raw)); }
+    else{ await fetch(cloudURL(),{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(JSON.stringify(DB))}); }       // nube vacía → siembro con los datos de ejemplo
+    startCloudStream();
+  }catch(e){ console.warn('Nube no disponible, uso datos locales:',e); }
+}
+function startCloudStream(){ if(!cloudOn()||!('EventSource'in window))return;
+  try{
+    const es=new EventSource(cloudURL());                // Firebase transmite cambios en vivo por SSE
+    const pull=()=>fetch(cloudURL()).then(r=>r.json()).then(raw=>{ if(raw)applyRemote(JSON.parse(raw)); }).catch(()=>{});
+    es.addEventListener('put',pull); es.addEventListener('patch',pull);
+  }catch(e){}
+}
+cloudInit();
 
 /* colores dinámicos */
 function colorHex(n){const c=DB.colores.find(x=>x.nombre===n);return c?c.hex:(n==='VACÍO'?'transparent':'#666');}
