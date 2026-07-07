@@ -636,8 +636,9 @@ function renderNotifs(){
   const list=document.getElementById('notifList');
   if(!vis.length){list.innerHTML='<div class="empty">Sin notificaciones.</div>';return;}
   list.innerHTML=vis.slice().reverse().slice(0,40).map(n=>{
-    if(n.tipo==='pieza_mala')return `<div class="notif ${n.read?'':'unread'}">⚠️ <b>Pieza MALA</b> en Pulido<br>${n.modelo} — ${n.defecto}<br>
-      <small>Ubicación: ${n.ubic||'—'} · por ${n.by} · ${fmt(n.at)}</small></div>`;
+    if(n.tipo==='pieza_mala')return `<div class="notif ${n.read?'':'unread'}" data-pieza="${n.pieza??n.id}" style="cursor:pointer">⚠️ <b>Pieza MALA</b> en Pulido<br>${n.modelo} — ${n.defecto}<br>
+      <small>Ubicación: ${n.ubic||'—'} · por ${n.by} · ${fmt(n.at)}</small><br>
+      <small style="color:var(--accent)">👁️ Tocá para ver la foto y el informe</small></div>`;
     return `<div class="notif ${n.read?'':'unread'}">🎨 <b>Cambio de ${n.campo}</b> — Vuelta ${n.vuelta}, ítem ${n.n} (${n.obs})<br>
       <span>${n.prev} → <b>${n.next}</b></span><br><small>por ${n.by} · ${fmt(n.at)}</small></div>`;
   }).join('');
@@ -660,7 +661,7 @@ document.getElementById('addPiezaBtn').onclick=()=>{
   if(!fecha||!modelo){alert('Completá fecha y nombre de pieza.');return;}
   const p={id:Date.now(),fecha,modelo,cod,marca,estado,by:ME.nombre};
   if(estado==='mala'){p.defecto=document.getElementById('pDefecto').value;p.ubic=document.getElementById('pUbic').value.trim();p.foto=fotoData;
-    pushNotif({tipo:'pieza_mala',fecha,modelo,defecto:p.defecto,ubic:p.ubic,by:ME.nombre,at:Date.now(),read:false});}
+    pushNotif({tipo:'pieza_mala',pieza:p.id,fecha,modelo,defecto:p.defecto,ubic:p.ubic,by:ME.nombre,at:Date.now(),read:false});}
   DB.piezas.push(p);save();
   document.getElementById('pModelo').value='';document.getElementById('pCod').value='';document.getElementById('pMarca').value='';
   document.getElementById('pUbic').value='';document.getElementById('pFoto').value='';fotoData=null;
@@ -854,6 +855,37 @@ function openFoto(src){
   document.body.appendChild(w);
 }
 document.addEventListener('click',e=>{if(e.target.classList&&e.target.classList.contains('zoom'))openFoto(e.target.src);});
+/* abrir foto + informe del defecto (desde una notificación de pieza mala) */
+function openDefecto(p){
+  if(!p){alert('No se encontró la pieza de esta notificación.');return;}
+  const w=document.createElement('div');w.className='lightbox';w.id='lightbox';
+  const img=p.foto?`<img src="${p.foto}" alt="foto del defecto">`
+    :`<div style="width:min(96vw,420px);height:280px;display:flex;align-items:center;justify-content:center;background:#111827;border:1px dashed #475569;border-radius:10px;color:#94a3b8">Sin foto cargada</div>`;
+  const informe=`<div class="cap" style="text-align:left;max-width:min(96vw,560px);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;line-height:1.5">
+    <div style="font-size:15px;margin-bottom:6px"><b>${p.modelo}</b>${p.cod?' <span style="color:var(--muted)">('+p.cod+')</span>':''} <span class="est mala" style="margin-left:6px">MALA</span></div>
+    <div>Defecto: <b>${p.defecto||'—'}</b></div>
+    <div>Ubicación del defecto: <b>${p.ubic||'—'}</b></div>
+    <div style="color:var(--muted);font-size:12px;margin-top:6px">Cargó: ${p.by} · ${p.fecha}${p.marca?' · '+p.marca:''}</div>
+  </div>`;
+  w.innerHTML=`<button class="close">×</button>${img}${informe}`;
+  w.onclick=e=>{if(e.target===w||e.target.className==='close')w.remove();};
+  document.body.appendChild(w);
+}
+/* clic en una notificación de pieza mala → abre foto + informe y cierra el panel */
+document.getElementById('notifList').addEventListener('click',e=>{
+  const item=e.target.closest('.notif[data-pieza]');if(!item)return;
+  const pid=item.getAttribute('data-pieza');
+  const p=DB.piezas.find(x=>String(x.id)===pid);
+  document.getElementById('notifPanel').classList.add('hidden');
+  openDefecto(p);
+});
+/* tocar en cualquier otro lado cierra el panel de notificaciones */
+document.addEventListener('click',e=>{
+  const panel=document.getElementById('notifPanel');
+  if(panel.classList.contains('hidden'))return;
+  if(panel.contains(e.target)||document.getElementById('bellBtn').contains(e.target))return;
+  panel.classList.add('hidden');
+});
 function renderAll(){
   const today=new Date().toISOString().slice(0,10);
   document.getElementById('pFecha').value=today;document.getElementById('dFecha').value=today;
